@@ -76,7 +76,7 @@ app.post("/login", async (req, res) => {
     );
 
     res.cookie("token", token, { httpOnly: true });
-    return res.json({ messsage: "Login successful. " });
+    return res.json({ messsage: "Login successful. ", token });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Internal server error" });
