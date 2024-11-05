@@ -5,6 +5,7 @@ const { body, validationResult } = require("express-validator");
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 
 const prisma = new PrismaClient();
 
@@ -12,6 +13,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 
 const validateSignUp = [
   body("username")
@@ -79,6 +81,22 @@ app.post("/login", async (req, res) => {
     console.error("Login error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
+});
+
+app.post("/verify-token", (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ message: "Token not provided." });
+  }
+
+  jwt.verify(token, process.env.MY_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: "Invalid or expired token." });
+    }
+    res.json({ message: "Token is valid.", user });
+  });
 });
 
 const PORT = process.env.PORT || 8080;
