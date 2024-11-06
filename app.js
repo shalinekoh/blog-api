@@ -6,6 +6,8 @@ const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
+const multer = require("multer");
+const upload = multer({ dest: "uploads/" });
 
 const prisma = new PrismaClient();
 
@@ -83,7 +85,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.post("/verify-token", (req, res) => {
+function authenticateToken(req, res, next) {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
 
@@ -95,9 +97,35 @@ app.post("/verify-token", (req, res) => {
     if (err) {
       return res.status(403).json({ message: "Invalid or expired token." });
     }
-    res.json({ message: "Token is valid.", user });
+    req.user = user;
+    next();
   });
-});
+}
+
+app.post(
+  "/posts",
+  authenticateToken,
+  upload.single("fileupload"),
+  async (req, res) => {
+    const { title, content } = req.body;
+    const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+
+    try {
+      const post = await prisma.post.create({
+        data: {
+          title: title,
+          content: content,
+          image: imagePath,
+          comment: {},
+          userId: req.user.id,
+        },
+      });
+      res.status(200).json({ message: "Post successfully created", post });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error. " });
+    }
+  }
+);
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log("Listening"));
