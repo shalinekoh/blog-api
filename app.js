@@ -7,7 +7,13 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
+const cloudinary = require("./utils/cloudinary.config");
+const fs = require("fs");
+
+const upload = multer({
+  limits: { fileSize: 10485760 },
+  dest: "uploads/",
+});
 
 const prisma = new PrismaClient();
 
@@ -102,24 +108,51 @@ function authenticateToken(req, res, next) {
   });
 }
 
+app.get("/posts", async (req, res) => {
+  try {
+    const posts = await prisma.post.findMany({
+      include: {
+        User: {
+          select: { username: true },
+        },
+      },
+    });
+
+    const randomPosts = posts.sort(() => Math.random() - 0.5).slice(0, 3);
+    res.json({ posts: posts, randomPosts: randomPosts });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
 app.post(
   "/posts",
   authenticateToken,
   upload.single("fileupload"),
   async (req, res) => {
     const { title, content } = req.body;
-    const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+    const imagePath = req.file ? req.file.path : null;
+
+    let imageUrl = null;
+    if (imagePath) {
+      const uploadResult = await cloudinary.uploader.upload(imagePath, {
+        resource_type: "auto",
+      });
+      imageUrl = uploadResult.secure_url;
+      fs.unlinkSync(imagePath);
+    }
 
     try {
       const post = await prisma.post.create({
         data: {
           title: title,
           content: content,
-          image: imagePath,
+          image: imageUrl,
           comment: {},
           userId: req.user.id,
         },
       });
+
       res.status(200).json({ message: "Post successfully created", post });
     } catch (error) {
       res.status(500).json({ message: "Internal server error. " });
