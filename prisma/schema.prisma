@@ -21,20 +21,21 @@ model User {
 }
 
 model Post {
-  id        String    @id @default(uuid())
-  userId    String
-  User      User      @relation(fields: [userId], references: [id])
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  comment   Comment[]
-  title     String
-  image     String?
-  content   String
+  id          String    @id @default(uuid())
+  userId      String
+  User        User      @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  comment     Comment[]
+  title       String
+  image       String?
+  content     String
+  description String?
 }
 
 model Comment {
   id        String   @id @default(uuid())
   postId    String
-  Post      Post     @relation(fields: [postId], references: [id])
+  Post      Post?    @relation(fields: [postId], references: [id])
   createdAt DateTime @default(now())
 }

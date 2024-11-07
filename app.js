@@ -130,7 +130,7 @@ app.post(
   authenticateToken,
   upload.single("fileupload"),
   async (req, res) => {
-    const { title, content } = req.body;
+    const { title, description, content } = req.body;
     const imagePath = req.file ? req.file.path : null;
 
     let imageUrl = null;
@@ -146,6 +146,7 @@ app.post(
       const post = await prisma.post.create({
         data: {
           title: title,
+          description: description,
           content: content,
           image: imageUrl,
           comment: {},
