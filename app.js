@@ -84,7 +84,7 @@ app.post("/login", async (req, res) => {
     );
 
     res.cookie("token", token, { httpOnly: true });
-    return res.json({ messsage: "Login successful. ", token });
+    return res.json({ messsage: "Login successful. ", token, id: user.id });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -160,6 +160,112 @@ app.post(
     }
   }
 );
+
+app.get("/post/:id", async (req, res) => {
+  const postId = req.params.id;
+  try {
+    const post = await prisma.post.findFirst({
+      where: { id: postId },
+      include: {
+        User: {
+          select: { username: true },
+        },
+      },
+    });
+    res.json(post);
+  } catch (error) {
+    res.status(401).json({ message: "Post not found. " });
+  }
+});
+
+app.put(
+  "/post/:id",
+  authenticateToken,
+  upload.single("fileupload"),
+  async (req, res) => {
+    const { title, description, content } = req.body;
+    const postId = req.params.id;
+    const imagePath = req.file ? req.file.path : null;
+    let imageUrl = null;
+
+    try {
+      if (imagePath) {
+        const uploadResult = await cloudinary.uploader.upload(imagePath, {
+          resource_type: "auto",
+        });
+        imageUrl = uploadResult.secure_url;
+        fs.unlinkSync(imagePath);
+      }
+
+      const updatedData = {
+        title,
+        description,
+        content,
+      };
+      if (imageUrl) {
+        updatedData.image = imageUrl;
+      }
+
+      const post = await prisma.post.update({
+        where: { id: postId },
+        data: updatedData,
+      });
+
+      res.json({ message: "Post updated successfully.", post });
+    } catch (error) {
+      console.error("Error updating post:", error);
+      res.status(500).json({
+        message: "An error occurred while updating the post. Please try again.",
+      });
+    }
+  }
+);
+
+app.delete("/post/:id", authenticateToken, async (req, res) => {
+  const postId = req.params.id;
+
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+    });
+
+    // Check if the post exists
+    if (!post) {
+      return res.status(404).json({ message: "Post not found." });
+    }
+
+    // Optionally, check if the authenticated user is the author of the post
+    if (post.userId !== req.user.id) {
+      return res
+        .status(403)
+        .json({ message: "Unauthorized to delete this post." });
+    }
+
+    // Delete the post
+    await prisma.post.delete({
+      where: { id: postId },
+    });
+
+    res.status(200).json({ message: "Post deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting post:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while deleting the post." });
+  }
+});
+
+app.get("/profile/:userId", async (req, res) => {
+  const userId = req.params.userId;
+  try {
+    const userPosts = await prisma.post.findMany({
+      where: { userId: userId },
+    });
+    res.json(userPosts);
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log("Listening"));
