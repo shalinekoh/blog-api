@@ -8,7 +8,7 @@ const app = express();
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://sk-bitsnbytes.netlify.app/",
+  "https://sk-bitsnbytes.netlify.app",
 ];
 
 if (process.env.NODE_ENV === "development") {
@@ -31,7 +31,7 @@ if (process.env.NODE_ENV === "development") {
 app.use(express.json());
 app.use(cookieParser());
 
-app.options("*", cors());
+app.options("*", cors(corsOptions));
 
 app.use(router);
 
