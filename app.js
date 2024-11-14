@@ -31,7 +31,7 @@ if (process.env.NODE_ENV === "development") {
 app.use(express.json());
 app.use(cookieParser());
 
-app.options("*", cors(corsOptions));
+app.options("*", cors());
 
 app.use(router);
 
