@@ -6,7 +6,10 @@ const router = require("./routes/api");
 
 const app = express();
 
-const allowedOrigins = ["http://localhost:5173"];
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://sk-bitsnbytes.netlify.app/",
+];
 
 if (process.env.NODE_ENV === "development") {
   app.use(
