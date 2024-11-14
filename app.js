@@ -6,9 +6,29 @@ const router = require("./routes/api");
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = ["http://localhost:5173"];
+
+if (process.env.NODE_ENV === "development") {
+  app.use(
+    cors({
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE"],
+    })
+  );
+} else {
+  app.use(
+    cors({
+      origin: allowedOrigins,
+      methods: ["GET", "POST", "PUT", "DELETE"],
+      credentials: true,
+    })
+  );
+}
+
 app.use(express.json());
 app.use(cookieParser());
+
+app.options("*", cors());
 
 app.use(router);
 
