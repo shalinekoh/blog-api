@@ -6,7 +6,7 @@ This is the backend of the application.
 
 ## Links
 
-- <a href="">Live Demo (may take some time to load)</a>
+- <a href="https://sk-bitsnbytes.netlify.app/">Live Demo (may take some time to load)</a>
 - <a href="https://github.com/shalinekoh/blog-client">Frontend repository</a>
 
 ## Features
